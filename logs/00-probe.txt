@@ -1,0 +1,100 @@
+===== 1. 主机与系统 =====
+localhost.localdomain
+Linux localhost.localdomain 6.12.0-55.12.1.el10_0.x86_64 #1 SMP PREEMPT_DYNAMIC Fri May 23 17:41:02 UTC 2025 x86_64 GNU/Linux
+--- os-release ---
+NAME="Rocky Linux"
+VERSION="10.0 (Red Quartz)"
+ID="rocky"
+ID_LIKE="rhel centos fedora"
+VERSION_ID="10.0"
+PLATFORM_ID="platform:el10"
+PRETTY_NAME="Rocky Linux 10.0 (Red Quartz)"
+ANSI_COLOR="0;32"
+LOGO="fedora-logo-icon"
+CPE_NAME="cpe:/o:rocky:rocky:10::baseos"
+HOME_URL="https://rockylinux.org/"
+VENDOR_NAME="RESF"
+VENDOR_URL="https://resf.org/"
+BUG_REPORT_URL="https://bugs.rockylinux.org/"
+SUPPORT_END="2035-05-31"
+ROCKY_SUPPORT_PRODUCT="Rocky-Linux-10"
+ROCKY_SUPPORT_PRODUCT_VERSION="10.0"
+REDHAT_SUPPORT_PRODUCT="Rocky Linux"
+REDHAT_SUPPORT_PRODUCT_VERSION="10.0"
+
+===== 2. 资源 =====
+--- CPU ---
+4
+Architecture:                         x86_64
+CPU(s):                               4
+Model name:                           11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz
+--- 内存 ---
+               total        used        free      shared  buff/cache   available
+Mem:           3.5Gi       487Mi       3.0Gi       9.1Mi       253Mi       3.1Gi
+Swap:          2.0Gi          0B       2.0Gi
+--- 磁盘 ---
+Filesystem           Size  Used Avail Use% Mounted on
+/dev/mapper/rl-root   66G  2.4G   63G   4% /
+/dev/mapper/rl-root   66G  2.4G   63G   4% /
+--- swap ---
+NAME      TYPE      SIZE USED PRIO
+/dev/dm-1 partition   2G   0B   -2
+
+===== 3. 网络 =====
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens33            UP             192.168.100.128/24 fe80::20c:29ff:feb9:2a55/64 
+--- 默认路由 ---
+default via 192.168.100.2 dev ens33 proto dhcp src 192.168.100.128 metric 100 
+192.168.100.0/24 dev ens33 proto kernel scope link src 192.168.100.128 metric 100 
+--- DNS ---
+search localdomain
+nameserver 192.168.100.2
+
+===== 4. 已有运行时/集群 =====
+absent: docker
+absent: podman
+absent: crictl
+absent: ctr
+absent: kubectl
+absent: helm
+absent: k3s
+absent: containerd
+absent: nerdctl
+--- 相关 systemd 单元 ---
+(none)
+
+===== 5. 端口占用（80/443/6443/8080）=====
+(these ports are free)
+
+===== 6. 安全与防护 =====
+--- SELinux ---
+Enforcing
+--- 防火墙 ---
+inactive
+inactive
+--- iptables 规则条数 ---
+0
+
+===== 7. 外网出口检测 =====
+https://get.k3s.io -> HTTP 200
+https://rancher-mirror.rancher.cn -> HTTP 403
+https://registry.cn-hangzhou.aliyuncs.com/v2/ -> HTTP 401
+https://pypi.tuna.tsinghua.edu.cn/simple/ -> HTTP 000
+https://github.com -> HTTP 200
+
+===== 8. 内核模块与 cgroup =====
+cgroup version: cgroup2fs
+nf_conntrack          204800  2 nf_nat,nft_ct
+nf_defrag_ipv6         24576  1 nf_conntrack
+nf_defrag_ipv4         12288  1 nf_conntrack
+--- kernel parameters ---
+net.ipv4.ip_forward = 0
+
+===== 9. 时间同步 =====
+               Local time: Fri 2026-09-18 15:36:21 CST
+           Universal time: Fri 2026-09-18 07:36:21 UTC
+                 RTC time: Fri 2026-09-18 07:36:21
+                Time zone: Asia/Shanghai (CST, +0800)
+System clock synchronized: yes
+
+--- EXIT 0 ---

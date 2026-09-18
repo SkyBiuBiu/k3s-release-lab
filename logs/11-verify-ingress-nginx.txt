@@ -1,0 +1,21 @@
+--- Pods ---
+NAME                                        READY   STATUS              RESTARTS   AGE   IP          NODE      NOMINATED NODE   READINESS GATES
+ingress-nginx-admission-create-8j4nc        0/1     ImagePullBackOff    0          13m   10.42.0.7   k3s-lab   <none>           <none>
+ingress-nginx-admission-patch-pztf6         0/1     ImagePullBackOff    0          13m   10.42.0.8   k3s-lab   <none>           <none>
+ingress-nginx-controller-5fbc654cb9-2rj9n   0/1     ContainerCreating   0          13m   <none>      k3s-lab   <none>           <none>
+--- svc ---
+NAME                                 TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)                      AGE
+ingress-nginx-controller             LoadBalancer   10.43.123.113   192.168.100.128   80:31371/TCP,443:30492/TCP   13m
+ingress-nginx-controller-admission   ClusterIP      10.43.45.225    <none>            443/TCP                      13m
+--- 宿主 80/443 ---
+(未监听)
+--- 裸访问 ---
+no-host  -> HTTP 000
+web.lab.local -> HTTP 000
+--- 控制器版本 ---
+error: unable to upgrade connection: container not found ("controller")
+
+--- STDERR ---
+error: timed out waiting for the condition on pods/ingress-nginx-controller-5fbc654cb9-2rj9n
+
+--- EXIT 0 ---

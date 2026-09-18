@@ -1,0 +1,34 @@
+# ============================================================================
+# 实验组一 · 场景 B：Service 层灰度发布
+#
+# 入口 Service 的 selector 只匹配 app=web（不带 version），
+# 于是蓝、绿两个版本的 Pod 会同时出现在同一个 Endpoints 列表里。
+# kube-proxy 对后端做随机转发 → 每个版本拿到的流量 ≈ 它占的 Pod 数量比例。
+#
+#   "灰度比例"由副本数配比决定：blue:green = 9:1 → 约 10% 流量到绿环境
+#
+# 能力边界（本实验要验证的核心结论）：
+#   1. 比例是概率性的，不是精确权重；
+#   2. 粒度受 Pod 总数限制，无法做到 1% 这种细粒度；
+#   3. 无法按请求头 / Cookie / 用户做定向灰度。
+#     → 精细灰度必须上移到 Ingress（见实验组二）。
+#
+# 访问方式：NodePort 30082
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-ratio
+  namespace: release-lab
+  labels:
+    app: web
+    role: canary-entry
+spec:
+  type: NodePort
+  selector:
+    app: web             # ← 故意不带 version，两个版本都在后端
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      nodePort: 30082

@@ -1,0 +1,38 @@
+# 每个版本一个 Service（ClusterIP），供 Ingress 作为后端引用。
+# 注意：Service 的 selector 决定"这个 Service 代表哪个版本"，这是 Ingress 蓝绿/灰度改动的着力点。
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-blue
+  namespace: release-lab
+  labels:
+    app: web
+    version: blue
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+    version: blue          # ← 只选中蓝环境 Pod
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-green
+  namespace: release-lab
+  labels:
+    app: web
+    version: green
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+    version: green         # ← 只选中绿环境 Pod
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

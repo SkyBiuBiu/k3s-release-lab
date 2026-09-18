@@ -1,0 +1,12 @@
+===== A. controller 镜像 · 候选源 =====
+k8s.m.daocloud.io/ingress-nginx/controller:v1.12.1                                              OK
+registry.cn-hangzhou.aliyuncs.com/google_containers/ingress-nginx-controller:v1.12.1            FAIL  (denied)
+docker.m.daocloud.io/ingress-nginx/controller:v1.12.1                                           FAIL  (unexpected status)
+docker.1ms.run/kubernetes/ingress-nginx/controller:v1.12.1                                      FAIL  (not found)
+swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.12.1       OK
+
+===== B. 已成功拉取的本地镜像 =====
+k8s.m.daocloud.io/ingress-nginx/controller:v1.12.1
+swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.12.1
+
+--- EXIT 0 ---

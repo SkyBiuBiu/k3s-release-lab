@@ -1,0 +1,28 @@
+# ============================================================================
+# 实验组一 · 场景 A：Service 层蓝绿发布
+#
+# 入口 Service 只有一个，通过切换 spec.selector 整体把流量从蓝切到绿。
+#   - selector 指向 version=blue → 全量走蓝环境
+#   - selector 指向 version=green → 全量走绿环境（一次性切换）
+# 回滚 = 把 selector 切回蓝。整个过程"瞬时、全量、无中间态"，这正是蓝绿的语义。
+#
+# 访问方式：NodePort 30081
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-bg
+  namespace: release-lab
+  labels:
+    app: web
+    role: bluegreen-entry
+spec:
+  type: NodePort
+  selector:
+    app: web
+    version: blue        # ← 蓝绿切换点：改这里
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      nodePort: 30081

@@ -1,0 +1,57 @@
+# ============================================================================
+# 实验组二 · 场景 B：Ingress 层灰度发布 —— 按权重（canary-weight）
+#
+# ingress-nginx 的金丝雀机制：同一个 host + path 上再挂一个 Ingress，
+# 打上 canary 注解后它就成为"金丝雀通道"，由主 Ingress 让出指定比例的流量。
+#
+# 优先级（ingress-nginx 官方语义）：
+#   canary-by-header  >  canary-by-cookie  >  canary-weight
+#
+# 比例递进只需改 canary-weight 这一个注解：
+#   20 → 50 → 80 → 100（100 即等价于完成全量发布）
+# ============================================================================
+# ---------- 主入口：稳定版本（蓝）----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: release-lab
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: web.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-blue
+                port:
+                  number: 80
+---
+# ---------- 金丝雀入口：新版本（绿），承接 20% 流量 ----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-canary
+  namespace: release-lab
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "20"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: web.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-green
+                port:
+                  number: 80

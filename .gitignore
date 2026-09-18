@@ -1,0 +1,19 @@
+# 本地同步用的临时打包文件（上传到目标机用，不入库）
+_upload.tgz
+*.tgz
+
+# gh / 其它工具的本地状态
+.ghconfig/
+
+# SSH 私钥、凭据，绝不入库
+*.pem
+*.key
+*.pass
+.env
+.env.*
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

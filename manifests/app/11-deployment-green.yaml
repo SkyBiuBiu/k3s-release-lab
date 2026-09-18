@@ -1,0 +1,42 @@
+# 绿环境（新版本 / canary）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-green
+  namespace: release-lab
+  labels:
+    app: web
+    version: green
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: web
+      version: green
+  template:
+    metadata:
+      labels:
+        app: web
+        version: green
+    spec:
+      containers:
+        - name: web
+          image: hashicorp/http-echo:0.2.3
+          args:
+            - "-listen=:8080"
+            - "-text=GREEN v2.0 (canary)"
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi

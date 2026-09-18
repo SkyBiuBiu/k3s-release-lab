@@ -1,0 +1,144 @@
+
+════════════════════════════════════════════════════════════════
+  0. 前置：控制器与后端 Service 就绪性检查
+════════════════════════════════════════════════════════════════
+--- ingress-nginx 控制器 ---
+NAME                                        READY   STATUS    RESTARTS   AGE
+ingress-nginx-controller-5fbc654cb9-n8jvm   1/1     Running   0          8m46s
+--- IngressClass ---
+NAME    CONTROLLER             PARAMETERS   AGE
+nginx   k8s.io/ingress-nginx   <none>       26m
+--- 后端 Service 与端点 ---
+NAME        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+web-blue    ClusterIP   10.43.218.198   <none>        80/TCP    2m55s
+web-green   ClusterIP   10.43.181.92    <none>        80/TCP    2m55s
+  web-blue endpoints = 10.42.0.37 10.42.0.38 10.42.0.39 10.42.0.40 10.42.0.41
+  web-green endpoints = 10.42.0.19 10.42.0.28 10.42.0.29 10.42.0.33 10.42.0.35
+
+--- 控制器在线确认（无匹配 Ingress 时应返回 404）---
+    HTTP 404
+
+════════════════════════════════════════════════════════════════
+  场景 A：Ingress 层蓝绿发布
+════════════════════════════════════════════════════════════════
+ingress.networking.k8s.io/web created
+  --- 当前 Ingress 与后端 ---
+NAME   CANARY   WEIGHT   BACKEND
+web    <none>   <none>   web-blue
+  [发布前（后端=web-blue）] 发 50 次请求：
+                                       50 次  100.0%
+      BLUE v1.0 (stable)               50 次  100.0%
+
+>>> 执行发布：把 Ingress 后端从 web-blue 改成 web-green
+    kubectl -n release-lab patch ingress web --type=json \
+      -p '[{"op":"replace","path":"/spec/rules/0/http/paths/0/backend/service/name","value":"web-green"}]'
+ingress.networking.k8s.io/web patched
+  --- 当前 Ingress 与后端 ---
+NAME   CANARY   WEIGHT   BACKEND
+web    <none>   <none>   web-green
+  [发布后（后端=web-green）] 发 50 次请求：
+                                       50 次  100.0%
+      GREEN v2.0 (canary)              50 次  100.0%
+
+>>> 回滚：后端改回 web-blue
+ingress.networking.k8s.io/web patched
+  [回滚后] 发 50 次请求：
+                                       50 次  100.0%
+      BLUE v1.0 (stable)               50 次  100.0%
+
+  ★ 与 Service 层蓝绿同构：切换点不同（selector → Ingress 后端），语义都是「原子全量」。
+
+════════════════════════════════════════════════════════════════
+  场景 B：Ingress 层灰度 —— 按权重 canary-weight
+════════════════════════════════════════════════════════════════
+ingress.networking.k8s.io/web unchanged
+ingress.networking.k8s.io/web-canary created
+>>> 设 canary-weight=20%
+  [weight=20%] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)               80 次  80.0%
+      GREEN v2.0 (canary)              20 次  20.0%
+
+>>> 设 canary-weight=50%
+  [weight=50%] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)               54 次  54.0%
+      GREEN v2.0 (canary)              46 次  46.0%
+
+>>> 设 canary-weight=80%
+  [weight=80%] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)               25 次  25.0%
+      GREEN v2.0 (canary)              75 次  75.0%
+
+>>> 收口：weight=100（等价于全量切到新版本）
+  [weight=100%] 发 100 次请求：
+                                      100 次  100.0%
+      GREEN v2.0 (canary)             100 次  100.0%
+
+  ★ 现象：权重是「概率」而非「路由」，实测值会在配置值附近小幅波动，这是正常现象。
+  ★ 优势：比例粒度可以是 1%，不受 Pod 数量限制（对比实验组一的分辨率问题）。
+
+════════════════════════════════════════════════════════════════
+  场景 C：Ingress 层灰度 —— 按请求头定向（确定性）
+════════════════════════════════════════════════════════════════
+ingress.networking.k8s.io/web unchanged
+ingress.networking.k8s.io/web-canary configured
+  --- 当前 Ingress 与后端 ---
+NAME         CANARY   WEIGHT   BACKEND
+web          <none>   <none>   web-blue
+web-canary   true     0        web-green
+
+  [不带 X-Canary 头] 发 30 次请求：
+                                       30 次  100.0%
+      BLUE v1.0 (stable)               30 次  100.0%
+  [带 X-Canary: always] 发 30 次请求：
+                                       30 次  100.0%
+      GREEN v2.0 (canary)              30 次  100.0%
+  [带 X-Canary: other] 发 30 次请求：
+                                       30 次  100.0%
+      BLUE v1.0 (stable)               30 次  100.0%
+
+  ★ 现象：带指定头的请求 100% 命中新版本，不带的一定命中旧版本 —— 这是「定向」而非「比例」。
+  ★ 适用：内部测试账号、真机联调、指定客户端先行验证。
+
+════════════════════════════════════════════════════════════════
+  场景 D：Ingress 层灰度 —— 按 Cookie 定向（粘性）
+════════════════════════════════════════════════════════════════
+ingress.networking.k8s.io/web unchanged
+ingress.networking.k8s.io/web-canary configured
+  --- 当前 Ingress 与后端 ---
+NAME         CANARY   WEIGHT   BACKEND
+web          <none>   <none>   web-blue
+web-canary   true     0        web-green
+
+  [不带 Cookie] 发 30 次请求：
+                                       30 次  100.0%
+      BLUE v1.0 (stable)               30 次  100.0%
+  [Cookie canary_user=always] 发 30 次请求：
+                                       30 次  100.0%
+      GREEN v2.0 (canary)              30 次  100.0%
+  [Cookie canary_user=never] 发 30 次请求：
+                                       30 次  100.0%
+      BLUE v1.0 (stable)               30 次  100.0%
+
+  ★ 现象：浏览器带上该 Cookie 后，后续所有请求持续命中新版本，无需每次加头。
+  ★ 适用：让一批用户长期停留在灰度版本上做观察式灰度。
+  ★ 优先级：canary-by-header > canary-by-cookie > canary-weight
+
+════════════════════════════════════════════════════════════════
+  收尾：清理金丝雀 Ingress，恢复纯蓝基线
+════════════════════════════════════════════════════════════════
+ingress.networking.k8s.io "web-canary" deleted from release-lab namespace
+  --- 当前 Ingress 与后端 ---
+NAME   CANARY   WEIGHT   BACKEND
+web    <none>   <none>   web-blue
+  [最终基线] 发 30 次请求：
+                                       30 次  100.0%
+      BLUE v1.0 (stable)               30 次  100.0%
+
+--- STDERR ---
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+
+--- EXIT 0 ---

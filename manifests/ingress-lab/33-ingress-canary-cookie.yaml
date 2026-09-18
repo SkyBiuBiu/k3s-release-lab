@@ -1,0 +1,55 @@
+# ============================================================================
+# 实验组二 · 场景 D：Ingress 层灰度发布 —— 按 Cookie 定向（粘性灰度）
+#
+# 与请求头的差别在于"粘性"：浏览器带上该 Cookie 后，后续所有请求都会持续命中新版本，
+# 不需要每次请求都额外加头。适合"让一批用户长期停在灰度版本上"的观察式灰度。
+#
+# 语义：Cookie canary_user=always → 走绿环境；其它值或不带该 Cookie → 走蓝环境。
+# 优先级：canary-by-header > canary-by-cookie > canary-weight（本场景仍显式置权重为 0）
+# ============================================================================
+# ---------- 主入口：稳定版本（蓝）----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: release-lab
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: web.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-blue
+                port:
+                  number: 80
+---
+# ---------- 金丝雀入口：按 Cookie 命中（绿）----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-canary
+  namespace: release-lab
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-by-cookie: "canary_user"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: web.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-green
+                port:
+                  number: 80

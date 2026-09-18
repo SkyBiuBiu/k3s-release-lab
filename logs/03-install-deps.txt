@@ -1,0 +1,77 @@
+===== 安装前状态 =====
+iptables         MISSING
+conntrack        MISSING
+socat            MISSING
+tar              MISSING
+openssl          MISSING
+iptables-legacy  MISSING
+
+===== dnf makecache（验证软件源可达）=====
+makecache rc=0
+
+===== 安装依赖包 =====
+  Running scriptlet: iptables-libs-1.8.11-8.el10_0.x86_64                 29/29 
+
+Upgraded:
+  crypto-policies-20260216-1.git0e54016.el10_2.2.noarch                         
+  crypto-policies-scripts-20260216-1.git0e54016.el10_2.2.noarch                 
+  gnutls-3.8.10-4.el10_2.x86_64                                                 
+  iptables-libs-1.8.11-16.el10_2.x86_64                                         
+  libssh-0.12.0-3.el10_2.x86_64                                                 
+  libssh-config-0.12.0-3.el10_2.noarch                                          
+  openssh-9.9p1-25.el10_2.rocky.0.1.x86_64                                      
+  openssh-clients-9.9p1-25.el10_2.rocky.0.1.x86_64                              
+  openssh-server-9.9p1-25.el10_2.rocky.0.1.x86_64                               
+  openssl-libs-1:3.5.8-1.el10_2.x86_64                                          
+Installed:
+  conntrack-tools-1.4.8-4.el10.x86_64                                           
+  iptables-nft-1.8.11-16.el10_2.x86_64                                          
+  libnetfilter_cthelper-1.0.1-1.el10.x86_64                                     
+  libnetfilter_cttimeout-1.0.0-27.el10.x86_64                                   
+  libnetfilter_queue-1.0.5-9.el10.x86_64                                        
+  openssl-1:3.5.8-1.el10_2.x86_64                                               
+  openssl-fips-provider-1:3.5.8-1.el10_2.x86_64                                 
+  socat-1.7.4.4-8.el10.x86_64                                                   
+  tar-2:1.35-13.el10_2.x86_64                                                   
+
+Complete!
+
+===== 安装后校验 =====
+iptables         /usr/sbin/iptables
+ct               STILL-MISSING
+conntrack        /usr/sbin/conntrack
+socat            /usr/bin/socat
+tar              /usr/bin/tar
+openssl          /usr/bin/openssl
+
+--- iptables 版本与规则表可读性 ---
+iptables v1.8.11 (nf_tables)
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+--- nft 后端确认 ---
+alternatives version 1.30 - Copyright (C) 2001 Red Hat, Inc.
+This may be freely redistributed under the terms of the GNU Public License.
+
+usage: alternatives --install <link> <name> <path> <priority>
+                    [--initscript <service>]
+                    [--family <family>]
+                    [--follower <follower_link> <follower_name> <follower_path>]*
+       alternatives --remove <name> <path>
+       alternatives --auto <name>
+       alternatives --config <name>
+       alternatives --display <name>
+       alternatives --set <name> <path/family>
+       alternatives --list
+       alternatives --remove-all <name>
+       alternatives --add-follower <name> <path> <follower_link> <follower_name> <follower_path>
+       alternatives --remove-follower <name> <path> <follower_name>
+
+common options: --verbose --test --help --usage --version --keep-missing --keep-foreign
+                --altdir <directory> --admindir <directory>
+iptables v1.8.11 (nf_tables)
+
+--- EXIT 0 ---

@@ -1,0 +1,40 @@
+===== A. k3s-selinux RPM 仓库（RHEL 系 SELinux 策略包）=====
+rpm.rancher.io/k3s-selinux -> 404
+--- 可用 el 版本目录 ---
+  el8 -> 404
+  el9 -> 404
+  el10 -> 404
+--- el9 目录内容样例 ---
+
+===== B. GitHub raw / 静态清单可达性 =====
+baremetal/deploy.yaml -> 000
+baremetal/deploy.yaml -> 000
+master/README.md -> 000
+
+===== C. get.k3s.io 安装脚本头部校验 =====
+#!/bin/sh
+set -e
+set -o noglob
+
+# Usage:
+
+===== D. 目标机当前时间/时区（用于日志对齐）=====
+2026-09-18T16:06:29+08:00
+
+===== E. 系统包管理器可用性（devel 工具链，编译用）=====
+FOUND: curl
+MISSING: tar
+FOUND: gzip
+MISSING: openssl
+MISSING: socat
+MISSING: iptables
+MISSING: conntrack
+--- dnf 可用性与源 ---
+4.20.0
+  Installed: dnf-0:4.20.0-12.el10_0.rocky.0.1.noarch at Tue 24 Feb 2026 08:32:24 AM GMT
+rocky-addons.repo
+rocky-devel.repo
+rocky-extras.repo
+rocky.repo
+
+--- EXIT 0 ---

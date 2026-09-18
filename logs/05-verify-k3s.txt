@@ -1,0 +1,48 @@
+===== 1. 节点 =====
+NAME      STATUS   ROLES           AGE    VERSION        INTERNAL-IP       EXTERNAL-IP   OS-IMAGE                        KERNEL-VERSION                         CONTAINER-RUNTIME
+k3s-lab   Ready    control-plane   3m9s   v1.36.4+k3s1   192.168.100.128   <none>        Rocky Linux 10.0 (Red Quartz)   6.12.0-55.12.1.el10_0.x86_64 (amd64)   containerd://2.3.4-k3s1.36
+
+===== 2. 系统组件（k3s 自带）=====
+NAME                                      READY   STATUS    RESTARTS   AGE    IP          NODE      NOMINATED NODE   READINESS GATES
+coredns-54996dc9b4-7h8n5                  1/1     Running   0          3m3s   10.42.0.3   k3s-lab   <none>           <none>
+local-path-provisioner-77b9867795-dzb4m   1/1     Running   0          3m3s   10.42.0.2   k3s-lab   <none>           <none>
+metrics-server-6dc596dfb8-bvgnw           1/1     Running   0          3m2s   10.42.0.4   k3s-lab   <none>           <none>
+
+===== 3. StorageClass / IngressClass =====
+--- StorageClass ---
+NAME                   PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+local-path (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  3m4s
+--- IngressClass ---
+No resources found
+
+===== 4. Traefik 是否已禁用（应无输出）=====
+No resources found in kube-system namespace.
+(traefik CRD absent -> 已禁用，端口 80/443 留给 ingress-nginx)
+
+===== 5. 内核转发与 iptables 规则 =====
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-iptables = 1
+iptables 规则条数: 98
+--- kube-proxy 模式 ---
+
+
+===== 6. 镜像加速生效验证（从 docker.io 拉小镜像）=====
+pod/mirror-test created
+NAME          READY   STATUS    RESTARTS   AGE   IP          NODE      NOMINATED NODE   READINESS GATES
+mirror-test   1/1     Running   0          3s    10.42.0.6   k3s-lab   <none>           <none>
+--- 事件（截取镜像相关）---
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  3s    default-scheduler  Successfully assigned default/mirror-test to k3s-lab
+  Normal  Pulling    3s    kubelet            spec.containers{mirror-test}: Pulling image "hashicorp/http-echo:0.2.3"
+  Normal  Pulled     1s    kubelet            spec.containers{mirror-test}: Successfully pulled image "hashicorp/http-echo:0.2.3" in 1.941s (1.941s including waiting). Image size: 1535358 bytes.
+  Normal  Created    1s    kubelet            spec.containers{mirror-test}: Container created
+  Normal  Started    1s    kubelet            spec.containers{mirror-test}: Container started
+Warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+pod "mirror-test" force deleted from default namespace
+
+===== 7. 端口占用复核（80/443 应为空）=====
+(80/443 空闲，可供 ingress-nginx 使用)
+
+--- EXIT 0 ---

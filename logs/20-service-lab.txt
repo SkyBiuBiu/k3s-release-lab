@@ -1,0 +1,148 @@
+
+════════════════════════════════════════════════════════════════
+  0. 部署基础工作负载
+════════════════════════════════════════════════════════════════
+namespace/release-lab created
+deployment.apps/web-blue created
+deployment.apps/web-green created
+service/web-blue created
+service/web-green created
+service/web-bg created
+service/web-ratio created
+--- 等待 rollout ---
+Waiting for deployment "web-blue" rollout to finish: 0 of 5 updated replicas are available...
+Waiting for deployment "web-blue" rollout to finish: 1 of 5 updated replicas are available...
+Waiting for deployment "web-blue" rollout to finish: 2 of 5 updated replicas are available...
+Waiting for deployment "web-blue" rollout to finish: 3 of 5 updated replicas are available...
+Waiting for deployment "web-blue" rollout to finish: 4 of 5 updated replicas are available...
+deployment "web-blue" successfully rolled out
+deployment "web-green" successfully rolled out
+
+--- Pod 与版本标签 ---
+NAME                        POD-IP       APP   VERSION   READY
+web-blue-597c9bfd5c-7mnzm   10.42.0.22   web   blue      true
+web-blue-597c9bfd5c-8rzwq   10.42.0.23   web   blue      true
+web-blue-597c9bfd5c-fx7wr   10.42.0.15   web   blue      true
+web-blue-597c9bfd5c-mqd8r   10.42.0.14   web   blue      true
+web-blue-597c9bfd5c-wgjzc   10.42.0.21   web   blue      true
+web-green-c66df4685-dkstp   10.42.0.20   web   green     true
+web-green-c66df4685-mc8zs   10.42.0.16   web   green     true
+web-green-c66df4685-q59qn   10.42.0.19   web   green     true
+web-green-c66df4685-qg474   10.42.0.17   web   green     true
+web-green-c66df4685-xdh9l   10.42.0.18   web   green     true
+
+--- Service 一览（重点看 selector）---
+NAME        TYPE        PORT   NODEPORT   SELECTOR
+web-bg      NodePort    80     30081      map[app:web version:blue]
+web-blue    ClusterIP   80     <none>     map[app:web version:blue]
+web-green   ClusterIP   80     <none>     map[app:web version:green]
+web-ratio   NodePort    80     30082      map[app:web]
+
+--- 各 Service 的 Endpoints 数量 ---
+  web-blue     5 个
+  web-green    5 个
+  web-bg       5 个
+  web-ratio    10 个
+
+════════════════════════════════════════════════════════════════
+  场景 A：Service 层蓝绿发布  入口 = NodePort 30081 (svc/web-bg)
+════════════════════════════════════════════════════════════════
+
+>>> A1 基线：web-bg.selector = {"app":"web","version":"blue"}
+  [基线] 发 50 次请求：
+                                       50 次  100.0%
+      BLUE v1.0 (stable)               50 次  100.0%
+
+>>> A2 执行发布：selector 整体切到 green
+    kubectl -n release-lab patch svc web-bg -p '{"spec":{"selector":{"app":"web","version":"green"}}}'
+service/web-bg patched
+    切换后 selector = {"app":"web","version":"green"}
+    切换后 endpoints = 10.42.0.16 10.42.0.17 10.42.0.18 10.42.0.19 10.42.0.20
+  [发布后] 发 50 次请求：
+                                       50 次  100.0%
+      GREEN v2.0 (canary)              50 次  100.0%
+
+>>> A3 回滚：selector 切回 blue
+service/web-bg patched
+  [回滚后] 发 50 次请求：
+                                       50 次  100.0%
+      BLUE v1.0 (stable)               50 次  100.0%
+
+  ★ 现象：切换与回滚瞬时全量生效，不存在中间比例 —— 这是蓝绿的本质。
+  ★ 代价：无观察期。新版本一旦有问题，受影响面直接是 100% 用户。
+
+════════════════════════════════════════════════════════════════
+  场景 B：Service 层灰度发布  入口 = NodePort 30082 (svc/web-ratio)
+════════════════════════════════════════════════════════════════
+  web-ratio.selector = {"app":"web"}
+  → 两个版本同时是它的后端，流量占比 ≈ 副本数占比
+
+>>> B1  5:5  （初始 50/50）
+>>> 缩放 blue=5 / green=5
+    后端 Pod 总数 = 10
+  [blue=5:green=5] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)               47 次  47.0%
+      GREEN v2.0 (canary)              53 次  53.0%
+
+>>> B2  9:1  （目标 ~10% 走新版本）
+>>> 缩放 blue=9 / green=1
+    后端 Pod 总数 = 10
+  [blue=9:green=1] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)               87 次  87.0%
+      GREEN v2.0 (canary)              13 次  13.0%
+
+>>> B3  7:3  （目标 ~30%）
+>>> 缩放 blue=7 / green=3
+    后端 Pod 总数 = 10
+  [blue=7:green=3] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)               75 次  75.0%
+      GREEN v2.0 (canary)              25 次  25.0%
+
+>>> B4  5:5  （目标 ~50%）
+>>> 缩放 blue=5 / green=5
+    后端 Pod 总数 = 10
+  [blue=5:green=5] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)               47 次  47.0%
+      GREEN v2.0 (canary)              53 次  53.0%
+
+>>> B5  1:9  （目标 ~90%）
+>>> 缩放 blue=1 / green=9
+    后端 Pod 总数 = 10
+  [blue=1:green=9] 发 100 次请求：
+                                      100 次  100.0%
+      BLUE v1.0 (stable)                8 次  8.0%
+      GREEN v2.0 (canary)              92 次  92.0%
+
+>>> B6  0:10 （收口，全量新版本）
+>>> 缩放 blue=0 / green=10
+    后端 Pod 总数 = 10
+  [blue=0:green=10] 发 100 次请求：
+                                      100 次  100.0%
+      GREEN v2.0 (canary)             100 次  100.0%
+
+  ★ 现象：比例只由副本数配比决定，不能指定精确权重。
+  ★ 能力边界：
+      1) 分辨率 = 1/总副本数 —— 10 个 Pod 只能表达 10% 的整数倍
+      2) kube-proxy 随机转发，短窗口实测值会在目标值附近波动
+      3) 无法按请求头 / Cookie / 用户定向 —— 精细灰度必须上移到 Ingress
+  ★ 结论：Service 层适合「粗粒度按比例」灰度；要精确权重与定向引流，看实验组二。
+
+════════════════════════════════════════════════════════════════
+  收尾：恢复到可复现基线（blue=5 / green=5，selector=blue）
+════════════════════════════════════════════════════════════════
+  完成。
+
+--- STDERR ---
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+
+--- EXIT 0 ---

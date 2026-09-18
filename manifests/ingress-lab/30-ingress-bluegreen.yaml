@@ -1,0 +1,33 @@
+# ============================================================================
+# 实验组二 · 场景 A：Ingress 层蓝绿发布
+#
+# 蓝绿在 Ingress 层的本质：入口规则只指一个后端 Service，
+# 切换时把 backend.service.name 从 web-blue 改成 web-green。
+#   kubectl patch ingress web --type=json \
+#     -p '[{"op":"replace","path":"/spec/rules/0/http/paths/0/backend/service/name","value":"web-green"}]'
+# 特征是"原子切换 + 可秒级回滚"，与 Service 层蓝绿同构，只是切换点从 selector 上移到 Ingress 后端。
+#
+# 对比实验组一：Service 层蓝绿需要两个 Deployment 的标签可被 selector 直接切换；
+# Ingress 层蓝绿在"两个版本各有独立 Service"时更自然（后端名一改即可）。
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: release-lab
+  annotations:
+    # 该 Ingress 是"主"入口，不带 canary 注解，承接全部流量
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: web.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-blue        # ← 蓝绿切换点：改成 web-green 即完成发布
+                port:
+                  number: 80

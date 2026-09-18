@@ -1,0 +1,58 @@
+# ============================================================================
+# 实验组二 · 场景 C：Ingress 层灰度发布 —— 按请求头精准引流
+#
+# 这是 Service 层做不到、Ingress 层才具备的能力：把"某个特定请求"定向送到新版本。
+# 典型用途：内部测试账号、真机联调、指定客户端灰度。
+#
+# 语义：带 X-Canary: always 的请求 → 100% 走绿环境；不带该头的请求 → 100% 走蓝环境。
+# 这与权重灰度的区别是"确定性"：权重是概率，请求头是路由。
+#
+# canary-weight 显式置 0，保证切到本场景时不残留上一场景的权重配置。
+# ============================================================================
+# ---------- 主入口：稳定版本（蓝）----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: release-lab
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: web.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-blue
+                port:
+                  number: 80
+---
+# ---------- 金丝雀入口：按请求头命中（绿）----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-canary
+  namespace: release-lab
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-by-header: "X-Canary"
+    nginx.ingress.kubernetes.io/canary-by-header-value: "always"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: web.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-green
+                port:
+                  number: 80

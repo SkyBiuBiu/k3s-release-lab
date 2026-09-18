@@ -1,0 +1,42 @@
+===== 1. 更新 containerd 镜像配置 =====
+mirrors:
+  docker.io:
+    endpoint:
+      - "https://docker.m.daocloud.io"
+      - "https://docker.1ms.run"
+  registry.k8s.io:
+    endpoint:
+      - "https://k8s.m.daocloud.io"
+
+===== 2. 重启 k3s 使 containerd 重新加载配置 =====
+节点就绪（约 3 秒）
+
+===== 3. 清理失败的金丝雀初始化 Job 与卡住的控制器 Pod =====
+job.batch "ingress-nginx-admission-create" deleted from ingress-nginx namespace
+job.batch "ingress-nginx-admission-patch" deleted from ingress-nginx namespace
+pod "ingress-nginx-controller-5fbc654cb9-2rj9n" deleted from ingress-nginx namespace
+
+===== 4. 重新下发清单（重建 Job）=====
+configmap/ingress-nginx-controller configured
+service/ingress-nginx-controller configured
+service/ingress-nginx-controller-admission unchanged
+deployment.apps/ingress-nginx-controller configured
+job.batch/ingress-nginx-admission-create created
+job.batch/ingress-nginx-admission-patch created
+ingressclass.networking.k8s.io/nginx unchanged
+validatingwebhookconfiguration.admissionregistration.k8s.io/ingress-nginx-admission configured
+
+===== 5. 等待 controller 就绪（最多 420s）=====
+控制器就绪（约 27 秒）
+
+===== 6. 状态复核 =====
+NAME                                        READY   STATUS      RESTARTS      AGE   IP           NODE      NOMINATED NODE   READINESS GATES
+ingress-nginx-admission-create-4n6cw        0/1     Completed   0             28s   10.42.0.10   k3s-lab   <none>           <none>
+ingress-nginx-admission-patch-wfg9s         0/1     Completed   1 (16s ago)   28s   10.42.0.11   k3s-lab   <none>           <none>
+ingress-nginx-controller-5fbc654cb9-n8jvm   1/1     Running     0             29s   10.42.0.12   k3s-lab   <none>           <none>
+--- 宿主 80/443 监听 ---
+(未监听)
+--- 连通性 ---
+  Host: web.lab.local -> HTTP 000
+
+--- EXIT 7 ---

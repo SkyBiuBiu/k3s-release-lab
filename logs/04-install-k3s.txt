@@ -1,0 +1,65 @@
+===== 1. 写入 containerd 镜像加速配置 =====
+mirrors:
+  docker.io:
+    endpoint:
+      - "https://docker.m.daocloud.io"
+      - "https://docker.1ms.run"
+
+===== 2. SELinux 现状 =====
+Enforcing
+
+===== 3. 执行 K3S 官方安装脚本 =====
+K3S_VERSION=v1.36.4+k3s1
+  Cleanup          : libselinux-3.8-2.el10_0.x86_64                       17/18 
+  Cleanup          : libsepol-3.8-1.el10.x86_64                           18/18 
+  Running scriptlet: selinux-policy-targeted-42.1.18-4.el10_2.3.noarch    18/18 
+  Running scriptlet: container-selinux-4:2.246.0-1.el10.noarch            18/18 
+  Running scriptlet: k3s-selinux-1.6-1.el9.noarch                         18/18 
+  Running scriptlet: libsepol-3.8-1.el10.x86_64                           18/18 
+
+Upgraded:
+  libselinux-3.10-1.el10.x86_64                                                 
+  libselinux-utils-3.10-1.el10.x86_64                                           
+  libsemanage-3.10-1.el10.x86_64                                                
+  libsepol-3.10-1.el10.x86_64                                                   
+  policycoreutils-3.10-2.el10_2.x86_64                                          
+  python3-libselinux-3.10-1.el10.x86_64                                         
+  selinux-policy-42.1.18-4.el10_2.3.noarch                                      
+  selinux-policy-targeted-42.1.18-4.el10_2.3.noarch                             
+Installed:
+  container-selinux-4:2.246.0-1.el10.noarch     k3s-selinux-1.6-1.el9.noarch    
+
+Complete!
+[INFO]  Creating /usr/local/bin/kubectl symlink to k3s
+[INFO]  Creating /usr/local/bin/crictl symlink to k3s
+[INFO]  Creating /usr/local/bin/ctr symlink to k3s
+[INFO]  Creating killall script /usr/local/bin/k3s-killall.sh
+[INFO]  Creating uninstall script /usr/local/bin/k3s-uninstall.sh
+[INFO]  env: Creating environment file /etc/systemd/system/k3s.service.env
+[INFO]  systemd: Creating service file /etc/systemd/system/k3s.service
+[INFO]  systemd: Enabling k3s unit
+Created symlink '/etc/systemd/system/multi-user.target.wants/k3s.service' → '/etc/systemd/system/k3s.service'.
+[INFO]  systemd: Starting k3s
+
+===== 4. 服务状态 =====
+enabled
+active
+
+===== 5. 等待节点就绪（最多 180s）=====
+节点 Ready（第 1 次探测，约 3 秒）
+
+===== 6. 集群总览 =====
+NAME      STATUS   ROLES    AGE   VERSION        INTERNAL-IP       EXTERNAL-IP   OS-IMAGE                        KERNEL-VERSION                         CONTAINER-RUNTIME
+k3s-lab   Ready    <none>   1s    v1.36.4+k3s1   192.168.100.128   <none>        Rocky Linux 10.0 (Red Quartz)   6.12.0-55.12.1.el10_0.x86_64 (amd64)   containerd://2.3.4-k3s1.36
+--- 版本 ---
+k3s version v1.36.4+k3s1 (4dedb15b)
+go version go1.26.7
+Client Version: v1.36.4+k3s1
+Kustomize Version: v5.8.1
+Server Version: v1.36.4+k3s1
+--- 全部 Pod ---
+No resources found
+
+===== 7. 若未就绪，输出诊断 =====
+
+--- EXIT 0 ---

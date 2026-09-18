@@ -46,7 +46,8 @@ k3s-release-lab/
 │   ├── 01-environment-probe.md    # 环境勘测记录（含原始探测输出）
 │   ├── 02-install-k3s-and-ingress.md  # K3s 安装、镜像加速、ingress-nginx 部署
 │   ├── 03-service-blue-green-canary.md # 实验组一：Service 蓝绿 + 灰度
-│   └── 04-ingress-blue-green-canary.md # 实验组二：Ingress 蓝绿 + 灰度
+│   ├── 04-ingress-blue-green-canary.md # 实验组二：Ingress 蓝绿 + 灰度
+│   └── 05-field-notes-for-blog.md      # 现场笔记（第一人称素材，供写博文用）
 ├── manifests/
 │   ├── 00-namespace.yaml          # release-lab 命名空间
 │   ├── app/                       # 两个版本的工作负载 + 每版本一个 Service
@@ -146,3 +147,6 @@ bash /opt/k3s-release-lab/scripts/30-ingress-lab.sh
 
 每次脚本执行的完整输出（含每条命令与其实际现象）都保存在 `logs/` 下，
 文档中的现象表格均直接取自这些原始日志，未做二次修饰。
+
+另外 [`docs/05-field-notes-for-blog.md`](docs/05-field-notes-for-blog.md) 是一份**第一人称的现场笔记**，
+只记录"当时遇到什么、当时凭什么这么判断、代价是什么"，与 01–04 的工程记录分开放，供后续整理成文时取用。
